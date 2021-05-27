@@ -986,11 +986,11 @@ It also ends with a line break.
 
 
 
-### 字符串字面量中的特俗字符
+### 字符串字面量中的特殊字符
 
-字符串字面量中可以包含以下特俗字符：
+字符串字面量中可以包含以下特殊字符：
 
-- 转义的特俗字符：空字符`\0`（不是空格字符），反斜杠`\\`，水平制表符`\t`，换行符`\n`，回车符`\r`，双引号`\"`，单引号`\'`。
+- 转义的特殊字符：空字符`\0`（不是空格字符），反斜杠`\\`，水平制表符`\t`，换行符`\n`，回车符`\r`，双引号`\"`，单引号`\'`。
 - 任意 Unicode 标量值，写为`\u{n}`，其中`n`是 1-8 位数的十六进制数。（参看后面的 [Unicode]() 章节）
 
 ```swift
@@ -1016,7 +1016,7 @@ Escaping all three quotation marks \"\"\"
 
 ### 扩展字符串定界符
 
-如果我们需要在字符串包含特俗字符而无需调用其效果，则可以使用扩展定界符包围字符串字面量。例如，打印字符串`#"你好啊\n很高兴认识你"#`时，将会打印`\n`，而不是换行打印。
+如果我们需要在字符串包含特殊字符而无需调用其效果，则可以使用扩展定界符包围字符串字面量。例如，打印字符串`#"你好啊\n很高兴认识你"#`时，将会打印`\n`，而不是换行打印。
 
 
 
@@ -1246,4 +1246,694 @@ print("the number of characters in \(word) is \(word.count)")
 
 
 ## 访问和修改字符串
+
+
+
+### 字符串索引
+
+如上所述，不同的字符可能需要占用不同大小的内存，如果想要确定某个字符在字符串中的位置，则必须从字符串的开头或结尾对字符串的每个`Unicode`标量进行迭代。**因此，Swift 字符串无法用整数值建立索引。**
+
+
+
+`String`类型关联有一个`Index`类型，`Index`类型的值对应着某个字符在字符串中位置。
+
+
+
+可以使用`String`的`startIndex`属性（`String`类型关联的`Index`类型）访问字符串中第一个字符的位置，`endIndex`属性是字符串中最后一个字符的位置。
+
+
+
+可以使用`String`的`index(before:)`和`index(after:)`方法来访问给定索引的前一个和后一个索引。如果要访问距离给定索引更远的索引，可以使用`index(_:offsetBy:)`方法。
+
+
+
+可以使用下标（不是整数）语法访问字符串中指定索引位置处的字符：
+
+```swift
+let greeting = "Guten Tag!"
+greeting[greeting.startIndex]
+// G
+greeting[greeting.index(before: greeting.endIndex)]
+// !
+greeting[greeting.index(after: greeting.startIndex)]
+// u
+let index = greeting.index(greeting.startIndex, offsetBy: 7)
+greeting[index]
+// a
+```
+
+尝试访问字符串索引范围之外的索引，会触发运行时错误。
+
+
+
+使用`indices`属性访问字符串的所有索引：
+
+```swift
+for index in greeting.indices {
+    print("\(greeting[index]) ", terminator: "")
+}
+// Prints "G u t e n   T a g ! "
+```
+
+
+
+> 任何遵循`Collection`协议的类型都可以使用`startIndex`和`endIndex`属性以及`index(before:)`、`index(after:)`和`index(_:offsetBy:)`方法，包括`String`、`Array`、`Dictionary`和`Set`。
+
+
+
+### 插入和删除
+
+使用`insert(_:at:)`方法将单个字符插入到字符串的指定位置，使用`insert(contentsOf:at:)`方法将另一个字符串插入到字符串的指定位置。
+
+```swift
+var welcome = "hello"
+welcome.insert("!", at: welcome.endIndex)
+// welcome now equals "hello!"
+
+welcome.insert(contentsOf: " there", at: welcome.index(before: welcome.endIndex))
+// welcome now equals "hello there!"
+```
+
+
+
+使用`remove(at:)`方法删除字符串中指定位置处的字符，使用`removeSubrange(_:)`方法删除指定范围处的子字符串。
+
+```swift
+welcome.remove(at: welcome.index(before: welcome.endIndex))
+// welcome now equals "hello there"
+
+let range = welcome.index(welcome.endIndex, offsetBy: -6)..<welcome.endIndex
+welcome.removeSubrange(range)
+// welcome now equals "hello"
+```
+
+
+
+> 任何遵循`Collection`协议的类型都可以使用`insert(_:at:)`、`insert(contentsOf:at:)`、`remove(at:)`和`removeSubrange(_:)`方法，包括`String`、`Array`、`Dictionary`和`Set`。
+
+
+
+### 子字符串
+
+使用下标或者诸如`prefix(_:)`之类的方法从某个字符串中获取一个子字符串时，其结果是一个`Substring`类型的实例，而不是另一个`String`类型的实例。`String`类型提供的大多数方法，`Substring`类型也提供。**与`String`不同，在对`String`执行操作时，只能在短时间内使用其`Substring`。当准备将`Substring`存储更长的时间时，可以将`Substring`转换位`String`。
+
+```swift
+let greeting = "Hello, world!"
+let index = greeting.firstIndex(of: ",") ?? greeting.endIndex
+let beginning = greeting[..<index]
+// beginning is "Hello"
+
+// Convert the result to a String for long-term storage.
+let newString = String(beginning)
+```
+
+
+
+与`String`实例一样，每个`Substring`实例也会占用一块内存，但`Substring`实例可以重用用于存储原始`String`的部分内存，或者重用用于存储另一个`Substring`的部分内存。由于`Substring`重复使用原始`String`的部分内存，所以只要使用原始`String`的任何`Substring`，原始`String`都必须保存在内存中。因此，`Substring`不适合长期存储。
+
+![Substring.png](https://docs.swift.org/swift-book/_images/stringSubstring_2x.png)
+
+
+
+## 比较字符串
+
+
+
+### 字符串和字符相等
+
+可以使用比较运算符`==`和`!=`来比较两个字符串或字符是否相等：
+
+```swift
+let quotation = "We're a lot alike, you and I."
+let sameQuotation = "We're a lot alike, you and I."
+if quotation == sameQuotation {
+    print("These two strings are considered equal")
+}
+// Prints "These two strings are considered equal"
+```
+
+
+
+如果两个`String`值（或两个字符值）的扩展字素簇是规范相等的，则认为它们相等。如果扩展字素簇具有相同的语言含义和外观，即使它们是由不同的 Unicode 标量组成，它们在规范上也是相等的。例如，带有二声声调的字母`é`可以由单个 Unicode 标量值`U+00E9`表示，也可以由字母`e`的标量值`U+0065`和二声声调`ˊ`的标量值`U+0301`组合起来表示，这两种扩展字素簇都是表示字符`é`的有效方法，它们是相等的。
+
+```swift
+let latinCapitalLetterA: Character = "\u{41}"
+
+let cyrillicCapitalLetterA: Character = "\u{0410}"
+
+if latinCapitalLetterA != cyrillicCapitalLetterA {
+    print("These two characters aren't equivalent.")
+}
+// Prints "These two characters aren't equivalent."
+```
+
+
+
+### 前缀和后缀相等
+
+可以使用`String`的`hasPrefix(_:)`方法来判断字符串是否具有特定的前缀，可以使用`hasSuffix(_:)`方法来判断字符串是否具有特定的后缀。
+
+```swift
+let romeoAndJuliet = [
+    "Act 1 Scene 1: Verona, A public place",
+    "Act 1 Scene 2: Capulet's mansion",
+    "Act 1 Scene 3: A room in Capulet's mansion",
+    "Act 1 Scene 4: A street outside Capulet's mansion",
+    "Act 1 Scene 5: The Great Hall in Capulet's mansion",
+    "Act 2 Scene 1: Outside Capulet's mansion",
+    "Act 2 Scene 2: Capulet's orchard",
+    "Act 2 Scene 3: Outside Friar Lawrence's cell",
+    "Act 2 Scene 4: A street in Verona",
+    "Act 2 Scene 5: Capulet's mansion",
+    "Act 2 Scene 6: Friar Lawrence's cell"
+]
+
+var act1SceneCount = 0
+for scene in romeoAndJuliet {
+    if scene.hasPrefix("Act 1 ") {
+        act1SceneCount += 1
+    }
+}
+print("There are \(act1SceneCount) scenes in Act 1")
+// Prints "There are 5 scenes in Act 1"
+
+var mansionCount = 0
+var cellCount = 0
+for scene in romeoAndJuliet {
+    if scene.hasSuffix("Capulet's mansion") {
+        mansionCount += 1
+    } else if scene.hasSuffix("Friar Lawrence's cell") {
+        cellCount += 1
+    }
+}
+print("\(mansionCount) mansion scenes; \(cellCount) cell scenes")
+// Prints "6 mansion scenes; 2 cell scenes"
+```
+
+
+
+## 字符串的 Unicode 表示形式
+
+将 Unicode 字符串写入文本文件或者其他存储时，该字符串中的 Unicode 标量会以几种 Unicode 定义的编码形式之一进行编码。每个表单会将字符串编码为称为**代码单元**（code unit）的小块，UTF-8 编码形式将字符串编码为`8`位代码单元，UTF-16 编码形式将字符串编码为`16`位代码单元，UTF-32 编码形式将字符串编码为`32`位代码单元。
+
+
+
+下面的每个示例显示以下字符串的不同表示形式：
+
+```swift
+let dogString = "Dog‼🐶"
+```
+
+
+
+### UTF-8 表示形式
+
+可以通过迭代`dogString`的`utf8`属性来访问字符串的 UTF-8 表示形式，该属性的类型为`String.UTF8View`，它是一个无符号的`8`位（`UInt8`）十进制值的集合，每个值对应于字符串的 UTF-8 表示形式的每个字节：
+
+![UTF-8.png](https://docs.swift.org/swift-book/_images/UTF8_2x.png)
+
+```swift
+for codeUnit in dogString.utf8 {
+    print("\(codeUnit) ", terminator: "")
+}
+print("")
+// Prints "68 111 103 226 128 188 240 159 144 182 "
+```
+
+
+
+### UTF-16 表示形式
+
+可以通过迭代`dogString`的`utf16`属性来访问字符串的 UTF-16 表示形式，该属性的类型为`String.UTF16View`，它是一个无符号的`16`位（`UInt16`）十进制值的集合，每个值对应于字符串的 UTF-16 表示形式的`16`位代码单元：
+
+![UTF-16.png](https://docs.swift.org/swift-book/_images/UTF16_2x.png)
+
+```swift
+for codeUnit in dogString.utf16 {
+    print("\(codeUnit) ", terminator: "")
+}
+print("")
+// Prints "68 111 103 8252 55357 56374 "
+```
+
+
+
+### Unicode 标量表示形式
+
+可以通过迭代`dogString`的`unicodeScalars`属性来访问字符串的 Unicode 标量表示形式，该属性的类型为`UnicodeScalarView`，它是一个`UnicodeScalar`类型值的集合。
+
+
+
+每个`UnicodeScalar`值有一个`value`属性，该属性返回 Unicode 标量的`21`位值，这个`21`值以一个`UInt32`值表示。因此，Unicode 标量表示形式是等效于 UTF-32 表示形式的。
+
+![Unicode 标量表示形式.png](https://docs.swift.org/swift-book/_images/UnicodeScalar_2x.png)
+
+```swift
+for scalar in dogString.unicodeScalars {
+    print("\(scalar.value) ", terminator: "")
+}
+print("")
+// Prints "68 111 103 8252 128054 "
+```
+
+
+
+每个`UnicodeScalar`值也可以用于构造新的`String`值，例如使用字符串插值：
+
+```swift
+for scalar in dogString.unicodeScalars {
+    print("\(scalar) ")
+}
+// D
+// o
+// g
+// ‼
+// 🐶
+```
+
+
+
+
+
+# 集合类型
+
+Swift 提供了数组、字典和集合这三种集合类型，数组是值的有序集合，集合是唯一值的无序集合，字典是键值关联的无序集合。
+
+
+
+Swift 中的数组、字典和集合，必须为它们指定可以存储的值类型和键类型，不能将不属于指定类型的值添加到这三种集合中。
+
+
+
+## 集合类型的可变性
+
+创建一个数组、字典或者集合，如果将其分配给**变量**，则创建的集合将是可变的；如果将其分配给**常量**，则该集合是不可变的。
+
+
+
+## 数组
+
+数组类型的声明语法如下：
+
+```swift
+// valueType 为要存储的值类型
+Array<valueType>
+```
+
+或者：
+
+```swift
+// valueType 为要存储的值类型
+[valueType]
+```
+
+
+
+> Swift 中的`Array`类型是可以桥接到 Foundation 中的`NSArray`类型的，相关信息可以查看 [Bridging Between Dictionary and NSDictionary](https://developer.apple.com/documentation/swift/dictionary#2846239)。
+
+
+
+### 创建空数组
+
+可以使用初始化程序语法创建特定类型的空数组：
+
+```swift
+var someInts = [Int]()
+```
+
+如果上下文信息已经提供了类型信息，还可以使用以下语法来创建一个空数组：
+
+```swift
+someInts.append(3) // 将 3 添加到 someInts 数组中
+
+someInts = [] // 现在 someInts 是一个空数组了
+```
+
+
+
+### 创建具有默认值的数组
+
+```swift
+var threeDoubles = Array(repeating: 0.0, count: 3)
+// threeDoubles is of type [Double], and equals [0.0, 0.0, 0.0]
+```
+
+
+
+### 通过将两个数组相加来创建新数组
+
+```swift
+var anotherThreeDoubles = Array(repeating: 2.5, count: 3)
+// anotherThreeDoubles is of type [Double], and equals [2.5, 2.5, 2.5]
+
+var sixDoubles = threeDoubles + anotherThreeDoubles
+// sixDoubles is inferred as [Double], and equals [0.0, 0.0, 0.0, 2.5, 2.5, 2.5]
+```
+
+
+
+### 使用数组字面量创建数组
+
+```swift
+var shoppingList: [String] = ["Eggs", "Milk"]
+```
+
+或者：
+
+```swift
+var shoppingList = ["Eggs", "Milk"]
+```
+
+
+
+### 访问和修改数组
+
+通过访问数组的`count`属性来获取数组中存储的元素个数：
+
+```swift
+print("The shopping list contains \(shoppingList.count) items.")
+// Prints "The shopping list contains 2 items."
+```
+
+通过访问数组的`isEmpty`属性来判断数组是否为空：
+
+```swift
+if shoppingList.isEmpty {
+    print("The shopping list is empty.")
+} else {
+    print("The shopping list isn't empty.")
+}
+// Prints "The shopping list isn't empty."
+```
+
+通过调用数组的`append(_:)`方法来向数组末尾添加新元素：
+
+```swift
+shoppingList.append("Flour")
+// shoppingList now contains 3 items, and someone is making pancakes
+```
+
+可以使用复合赋值运算符`+=`来将一个数组中的所有元素添加另一个数组中去：
+
+```swift
+shoppingList += ["Baking Powder"]
+// shoppingList now contains 4 items
+shoppingList += ["Chocolate Spread", "Cheese", "Butter"]
+// shoppingList now contains 7 items
+```
+
+使用下标语法来从数组中检索值：
+
+```swift
+var firstItem = shoppingList[0]
+// firstItem is equal to "Eggs"
+```
+
+也可以使用下标语法来更改给定索引上的值，数组的索引从`0`开始：
+
+```swift
+shoppingList[0] = "Six eggs"
+// the first item in the list is now equal to "Six eggs" rather than "Eggs"
+```
+
+还可以使用下标语法来更改某个索引范围内所有索引上的值，如果替换值数组中的元素个数**小于**索引范围内索引的个数，则会删除后续索引上的值；如果替换值数组中的元素个数**大于**索引范围内索引的个数，则会将多余的值添加到数组末尾：
+
+```swift
+shoppingList[4...6] = ["Bananas", "Apples"]
+// shoppingList now contains 6 items
+```
+
+使用`insert(_:at:)`方法来在数组的指定索引处插入一个新元素：
+
+```swift
+shoppingList.insert("Maple Syrup", at: 0)
+// shoppingList now contains 7 items
+// "Maple Syrup" is now the first item in the list
+```
+
+使用`remove(at:)`方法来删除数组中指定索引处的元素：
+
+```swift
+let mapleSyrup = shoppingList.remove(at: 0)
+// the item that was at index 0 has just been removed
+// shoppingList now contains 6 items, and no Maple Syrup
+// the mapleSyrup constant is now equal to the removed "Maple Syrup" string
+```
+
+
+
+> **使用下标访问或者修改数组时，索引值不能超过数组的索引边界，否则会触发运行时错误。**
+
+
+
+如果想要删除数组中的最后一个元素，则可以使用`removeLast()`方法，而不是`remove（at:）`方法，这样可以避免查询数组的`count`值：
+
+```swift
+let apples = shoppingList.removeLast()
+// the last item in the array has just been removed
+// shoppingList now contains 5 items, and no apples
+// the apples constant is now equal to the removed "Apples" string
+```
+
+
+
+### 数组迭代
+
+可以使用`for-in`循环来遍历数组中的值：
+
+```swift
+for item in shoppingList {
+    print(item)
+}
+// Six eggs
+// Milk
+// Flour
+// Baking Powder
+// Bananas
+```
+
+如果需要每个元素的索引及其值，请使用`enumerated()`方法迭代数组。对于数组中的每个元素，`enumerated()`方法都会返回一个由元素索引和元素值构成的元组：
+
+```swift
+for (index, value) in shoppingList.enumerated() {
+    print("Item \(index + 1): \(value)")
+}
+// Item 1: Six eggs
+// Item 2: Milk
+// Item 3: Flour
+// Item 4: Baking Powder
+// Item 5: Bananas
+```
+
+
+
+## 集合
+
+集合中无序存储着相同类型的不同值，当需要确保存储的值只出现一次时，可以使用集合。
+
+
+
+> 有关将 Swift 的`Set`类型桥接到 Foundation 中的`NSSet`类型的信息，请参看 [Bridging Between Set and NSSet](https://developer.apple.com/documentation/swift/set#2845530)。
+
+
+
+### 用于集合类型的哈希值
+
+为了将某种类型的值存储到集合中，该类型必须是可散列的。也就是说，该类型需要提供一种方式来计算该类型值的哈希值，哈希值是一个`Int`类型的值。在比较两个值是否相等时，会比较两个值的哈希值是否相等。如果两个值是相等的，那么这两个值的哈希值就一定是相等的。
+
+
+
+Swift 的所有基本类型（例如`String`、`Int`、`Double`和`Bool`）默认都是可散列的，可以用作设置值类型或字典键类型。
+
+
+
+> 可以通过让自定义类型去遵循 Swift 标准库中的`Hashable`协议来使其支持用作设置值类型和字典键类型。有关实现必需的`hash(into:)`方法的更多信息，请参看  [Hashable](https://developer.apple.com/documentation/swift/hashable)。
+
+
+
+### 集合类型的语法
+
+Swift 中的集合类型被写作`Set<Element>`，`Element`是集合中存储的值的类型。
+
+
+
+### 创建和初始化空集合
+
+```swift
+var letters = Set<Character>()
+print("letters is of type Set<Character> with \(letters.count) items.")
+// Prints "letters is of type Set<Character> with 0 items."
+```
+
+或者，如果上下文已经提供了类型信息，例如函数参数或者已经输入的变量或常量，您可以使用一个空数组字面量来创建一个空集：
+
+```swift
+letters.insert("a")
+// letters now contains 1 value of type Character
+letters = []
+// letters is now an empty set, but is still of type Set<Character>
+```
+
+
+
+### 使用数组字面量来创建集合
+
+```swift
+var favoriteGenres: Set<String> = ["Rock", "Classical", "Hip hop"]
+// favoriteGenres has been initialized with three initial items
+```
+
+**使用数组字面量来创建集合时，必须显式声明变量或常量的类型为`Set`类型。**也可以不显式指定存储值的类型：
+
+```swift
+var favoriteGenres: Set = ["Rock", "Classical", "Hip hop"]
+```
+
+
+
+### 访问和修改集合
+
+使用`Set`的只读`count`属性来查找集合中存储的值个数：
+
+```swift
+print("I have \(favoriteGenres.count) favorite music genres.")
+// Prints "I have 3 favorite music genres."
+```
+
+使用`Set`的`isEmpty`属性（`Boolean`类型）来判断集合是否为空：
+
+```swift
+if favoriteGenres.isEmpty {
+    print("As far as music goes, I'm not picky.")
+} else {
+    print("I have particular music preferences.")
+}
+// Prints "I have particular music preferences."
+```
+
+使用`Set`的`insert(_:)`方法来向集合中添加新值：
+
+```swift
+favoriteGenres.insert("Jazz")
+// favoriteGenres now contains 4 items
+```
+
+使用`remove(_:)`方法从集合中移除某个值，如果集合中存在该值，则该方法最终会返回一个已移除该值的集合；如果集合中不存在这个值，则会返回`nil`。或者，使用`removeAll()`方法来移除集合中的所有值。
+
+```swift
+if let removedGenre = favoriteGenres.remove("Rock") {
+    print("\(removedGenre)? I'm over it.")
+} else {
+    print("I never much cared for that.")
+}
+// Prints "Rock? I'm over it."
+```
+
+使用`contains(_:)`方法来检查集合中是否存在某个特定值：
+
+```swift
+To check whether a set contains a particular item, use the contains(_:) method.
+
+if favoriteGenres.contains("Funk") {
+    print("I get up on the good foot.")
+} else {
+    print("It's too funky in here.")
+}
+// Prints "It's too funky in here."
+```
+
+
+
+### 集合迭代
+
+可以使用`for-in`循环来迭代集合中的值：
+
+```swift
+for genre in favoriteGenres {
+    print("\(genre)")
+}
+// Classical
+// Jazz
+// Hip hop
+```
+
+集合是无序的，如果想要按照特定顺序去遍历集合中的值，可以使用`Set`的`sorted()`方法，该方法会返回一个将集合中的值使用`<`运算符排序后的数组。
+
+```swift
+for genre in favoriteGenres.sorted() {
+    print("\(genre)")
+}
+// Classical
+// Hip hop
+// Jazz
+```
+
+
+
+## 执行集合操作
+
+### 基本集合操作
+
+下图描述了集合 a 和集合 b，阴影区表示各种基本集合操作的结果：
+
+![基本集合操作结果.png](https://docs.swift.org/swift-book/_images/setVennDiagram_2x.png)
+
+- 使用`intersection(_:)`方法来创建一个包含两个集合共同含有的值的新集合。
+- 使用`symmetricDifference(_:)`方法创建一个将两个集合组合一起后并去掉两个集合共同含有的值的新集合。
+- 使用`union(_:)`方法创建一个将两个集合组合在一起后的新集合。
+- 使用`subtracting(_:)`方法来创建一个去掉集合 a 中的集合 b 也包含的值的新集合。
+
+```swift
+let oddDigits: Set = [1, 3, 5, 7, 9]
+let evenDigits: Set = [0, 2, 4, 6, 8]
+let singleDigitPrimeNumbers: Set = [2, 3, 5, 7]
+
+oddDigits.union(evenDigits).sorted()
+// [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+oddDigits.intersection(evenDigits).sorted()
+// []
+oddDigits.subtracting(singleDigitPrimeNumbers).sorted()
+// [1, 9]
+oddDigits.symmetricDifference(singleDigitPrimeNumbers).sorted()
+// [1, 2, 9]
+```
+
+
+
+### 集合关系和相等
+
+下图描述了集合 a、集合 b 和集合 c，重叠区域代表集合之间共享的元素。集合 a是集合 b 的超集，因为 a 包含 b 中的所有元素。反过来说，集合 b 是集合 a 的子集。集合 b 和集合 c彼此不相交，因为它们没有共同的元素。
+
+![集合关系和相等.png](https://docs.swift.org/swift-book/_images/setEulerDiagram_2x.png)
+
+- 使用`==`运算符来确定两个集合是否包含所有相同的值。
+- 使用`isSubset(of:)`方法确定一个集合的所有值是否包含在指定的集合中。
+- 使用`isSuperset(of:)`方法确定一个集合是否包含指定集合中的所有值。
+- 使用`isStrictSubset(of:)`或`isStrictSuperset(of:)`方法确定一个集合是子集还是超集，但不等于指定集合。
+- 使用`isDisjoint(with:)`方法确定两个集合是否没有共同的值。
+
+```swift
+let houseAnimals: Set = ["🐶", "🐱"]
+let farmAnimals: Set = ["🐮", "🐔", "🐑", "🐶", "🐱"]
+let cityAnimals: Set = ["🐦", "🐭"]
+
+houseAnimals.isSubset(of: farmAnimals)
+// true
+farmAnimals.isSuperset(of: houseAnimals)
+// true
+farmAnimals.isDisjoint(with: cityAnimals)
+// true
+```
+
+
+
+## 字典
+
+
+
+> Swift 中的`Dictionary`类型是可以桥接到 Foundation 中的`NSDictionary`类的，相关信息可以查看 [Bridging Between Dictionary and NSDictionary](https://developer.apple.com/documentation/swift/dictionary#2846239)。
+
+
+
+### 字典类型标准语法
 
