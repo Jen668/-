@@ -1929,6 +1929,8 @@ farmAnimals.isDisjoint(with: cityAnimals)
 
 ## 字典
 
+字典中存储着相同类型的键和相同类型的值，每个值都与一个唯一的键相关联，键充当字典中某个值的标识符。与数组不同，字典中存储的值是无序的。
+
 
 
 > Swift 中的`Dictionary`类型是可以桥接到 Foundation 中的`NSDictionary`类的，相关信息可以查看 [Bridging Between Dictionary and NSDictionary](https://developer.apple.com/documentation/swift/dictionary#2846239)。
