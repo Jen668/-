@@ -1751,7 +1751,7 @@ Swift 的所有基本类型（例如`String`、`Int`、`Double`和`Bool`）默�
 
 
 
-### 集合类型的语法
+### 集合类型语法
 
 Swift 中的集合类型被写作`Set<Element>`，`Element`是集合中存储的值的类型。
 
@@ -1937,5 +1937,1023 @@ farmAnimals.isDisjoint(with: cityAnimals)
 
 
 
-### 字典类型标准语法
+### 字典类型简写语法
+
+Swift 字典类型的完整语法为`Dictionary<Key, Value>`，也可以直接简写为`[Key: Value]`，`Key`是字典 key 的类型，`Value`是 key 对应的值的类型。
+
+
+
+### 创建空字典
+
+使用初始化语法创建一个空字典：
+
+```swift
+var namesOfIntegers: [Int: String] = [:]
+// namesOfIntegers is an empty [Int: String] dictionary
+```
+
+或者：
+
+```swift
+namesOfIntegers[16] = "sixteen"
+// namesOfIntegers now contains 1 key-value pair
+namesOfIntegers = [:]
+// namesOfIntegers is once again an empty dictionary of type [Int: String]
+```
+
+
+
+### 使用字典字面量创建字典
+
+```swift
+// [key 1: value 1, key 2: value 2, key 3: value 3]
+
+var airports: [String: String] = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+```
+
+如果字典中的所有 key 的类型是一致的，并且所有 value 的类型也是一致的，则不用显式声明`airports`变量为字典类型，Swift 会自动推断为字典类型：
+
+```swift
+var airports = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+```
+
+
+
+### 访问和修改字典
+
+访问`count`属性来查找字典中键值对的数量：
+
+```swift
+print("The airports dictionary contains \(airports.count) items.")
+// Prints "The airports dictionary contains 2 items."
+```
+
+访问`isEmpty`属性来判断该字典是否是一个空字典：
+
+```swift
+if airports.isEmpty {
+    print("The airports dictionary is empty.")
+} else {
+    print("The airports dictionary isn't empty.")
+}
+// Prints "The airports dictionary isn't empty."
+```
+
+可以使用下标语法来向字典中添加新的键值对：
+
+```swift
+airports["LHR"] = "London"
+// the airports dictionary now contains 3 items
+```
+
+或者使用下标语法来更改与指定 key 关联的值：
+
+```swift
+airports["LHR"] = "London Heathrow"
+// the value for "LHR" has been changed to "London Heathrow"
+```
+
+也可以使用`updateValue(_:forKey:)`方法来向字典中添加新的键值对或者更改与指定 key 关联的值，与下标语法不同，`updateValue(_:forKey:)`方法还会返回与指定 key 关联的旧值，这个值是一个可选的字典值类型，如果在更新之前，字典中存在指定 key 的旧值，则此可选值包含指定 key 的旧值；如果不存在旧值，则为`nil`：
+
+```swift
+if let oldValue = airports.updateValue("Dublin Airport", forKey: "DUB") {
+    print("The old value for DUB was \(oldValue).")
+}
+// Prints "The old value for DUB was Dublin."
+```
+
+ 还可以使用下标语法从字典中检索与指定 key 关联的值，返回值是一个可选的字典值类型：
+
+```swift
+if let airportName = airports["DUB"] {
+    print("The name of the airport is \(airportName).")
+} else {
+    print("That airport isn't in the airports dictionary.")
+}
+// Prints "The name of the airport is Dublin Airport."
+```
+
+可以使用下标语法将与指定 key 关联的值设为`nil`来从字典中删除键值对：
+
+```swift
+airports["APL"] = "Apple International"
+// "Apple International" isn't the real airport for APL, so delete it
+airports["APL"] = nil
+// APL has now been removed from the dictionary
+```
+
+或者，使用`removeValue(forKey:)`方法从字典中删除键值对，此方法会返回删除的值（如果存在），如果不存在值，则会返回`nil`：
+
+```swift
+if let removedValue = airports.removeValue(forKey: "DUB") {
+    print("The removed airport's name is \(removedValue).")
+} else {
+    print("The airports dictionary doesn't contain a value for DUB.")
+}
+// Prints "The removed airport's name is Dublin Airport."
+```
+
+
+
+### 字典迭代
+
+可以使用`for-in`循环来遍历字典中的键值对，每次循环会将字典中的一个键值对作为一个`(key, value)`元组返回，我们可以讲元组的成员分解为单独的临时常量或者变量：
+
+```swift
+for (airportCode, airportName) in airports {
+    print("\(airportCode): \(airportName)")
+}
+// LHR: London Heathrow
+// YYZ: Toronto Pearson
+```
+
+还可以通过访问字典的`keys`属性来遍历字典中的所有 key，通过访问字典的`values`属性来遍历字典中的所有值：
+
+```swift
+for airportCode in airports.keys {
+    print("Airport code: \(airportCode)")
+}
+// Airport code: LHR
+// Airport code: YYZ
+
+for airportName in airports.values {
+    print("Airport name: \(airportName)")
+}
+// Airport name: London Heathrow
+// Airport name: Toronto Pearson
+```
+
+
+
+# 控制流
+
+
+
+## for-in 循环
+
+遍历数组：
+
+```swift
+let names = ["Anna", "Alex", "Brian", "Jack"]
+for name in names {
+    print("Hello, \(name)!")
+}
+// Hello, Anna!
+// Hello, Alex!
+// Hello, Brian!
+// Hello, Jack!
+```
+
+遍历字典：
+
+```swift
+let numberOfLegs = ["spider": 8, "ant": 6, "cat": 4]
+for (animalName, legCount) in numberOfLegs {
+    print("\(animalName)s have \(legCount) legs")
+}
+// cats have 4 legs
+// ants have 6 legs
+// spiders have 8 legs
+```
+
+遍历数字区间，会返回区间内的每个数字：
+
+```swift
+for index in 1...5 {
+    print("\(index) times 5 is \(index * 5)")
+}
+// 1 times 5 is 5
+// 2 times 5 is 10
+// 3 times 5 is 15
+// 4 times 5 is 20
+// 5 times 5 is 25
+```
+
+在遍历**字符串、数组、字典、集合或者数字区间**时，如果返回值不是必需的，则可以使用`_`来代替循环变量，这会导致单个值被忽略，并且在循环的每次迭代期间不提供对当前值的访问：
+
+```swift
+let minutes = 60
+for tickMark in 0..<minutes {
+    // render the tick mark each minute (60 times)
+}
+```
+
+某些场景下，我们可能需要跨步执行某些操作，这时可以使用`for-in`循环配合`stride(from:to:by:)`方法（开区间）或者`stride(from:through:by:)`方法（闭区间）来分段区间：
+
+```swift
+let minuteInterval = 5
+for tickMark in stride(from: 0, to: minutes, by: minuteInterval) {
+    // render the tick mark every 5 minutes (0, 5, 10, 15 ... 45, 50, 55)
+}
+
+
+let hours = 12
+let hourInterval = 3
+for tickMark in stride(from: 3, through: hours, by: hourInterval) {
+    // render the tick mark every 3 hours (3, 6, 9, 12)
+}
+```
+
+
+
+## while 循环
+
+```swift
+var square = 0
+var diceRoll = 0
+while square < finalSquare {
+    // roll the dice
+    diceRoll += 1
+    if diceRoll == 7 { diceRoll = 1 }
+    // move by the rolled amount
+    square += diceRoll
+    if square < board.count {
+        // if we're still on the board, move up or down for a snake or a ladder
+        square += board[square]
+    }
+}
+print("Game over!")
+```
+
+
+
+## repeat-while 循环
+
+与`while`循环不同，`repeat-while `循环会先执行一次循环，然后再判断循环条件。
+
+```swift
+repeat {
+    // move up or down for a snake or ladder
+    square += board[square]
+    // roll the dice
+    diceRoll += 1
+    if diceRoll == 7 { diceRoll = 1 }
+    // move by the rolled amount
+    square += diceRoll
+} while square < finalSquare
+print("Game over!")
+```
+
+
+
+## 条件语句
+
+### if 语句
+
+```swift
+temperatureInFahrenheit = 90
+if temperatureInFahrenheit <= 32 {
+    print("It's very cold. Consider wearing a scarf.")
+} else if temperatureInFahrenheit >= 86 {
+    print("It's really warm. Don't forget to wear sunscreen.")
+} else {
+    print("It's not that cold. Wear a t-shirt.")
+}
+// Prints "It's really warm. Don't forget to wear sunscreen."
+```
+
+
+
+### switch-case 语句
+
+```swift
+let someCharacter: Character = "z"
+switch someCharacter {
+case "a":
+    print("The first letter of the alphabet")
+case "z":
+    print("The last letter of the alphabet")
+default:
+    print("Some other character")
+}
+// Prints "The last letter of the alphabet"
+```
+
+#### 区间匹配
+
+```swift
+let approximateCount = 62
+let countedThings = "moons orbiting Saturn"
+let naturalCount: String
+switch approximateCount {
+case 0:
+    naturalCount = "no"
+case 1..<5:
+    naturalCount = "a few"
+case 5..<12:
+    naturalCount = "several"
+case 12..<100:
+    naturalCount = "dozens of"
+case 100..<1000:
+    naturalCount = "hundreds of"
+default:
+    naturalCount = "many"
+}
+print("There are \(naturalCount) \(countedThings).")
+// Prints "There are dozens of moons orbiting Saturn."
+```
+
+#### 使用元组作为条件值
+
+```swift
+let somePoint = (1, 1)
+switch somePoint {
+case (0, 0):
+    print("\(somePoint) is at the origin")
+case (_, 0):
+    print("\(somePoint) is on the x-axis")
+case (0, _):
+    print("\(somePoint) is on the y-axis")
+case (-2...2, -2...2):
+    print("\(somePoint) is inside the box")
+default:
+    print("\(somePoint) is outside of the box")
+}
+// Prints "(1, 1) is inside the box"
+```
+
+![coordinateGraphSimple_2x.png](https://docs.swift.org/swift-book/_images/coordinateGraphSimple_2x.png)
+
+#### 值绑定
+
+```swift
+let anotherPoint = (2, 0)
+switch anotherPoint {
+case (let x, 0):
+    print("on the x-axis with an x value of \(x)")
+case (0, let y):
+    print("on the y-axis with a y value of \(y)")
+case let (x, y):
+    print("somewhere else at (\(x), \(y))")
+}
+// Prints "on the x-axis with an x value of 2"
+```
+
+#### where
+
+`switch-case`语句 还可以使用 `where`子句来检查附加条件：
+
+```swift
+let yetAnotherPoint = (1, -1)
+switch yetAnotherPoint {
+case let (x, y) where x == y:
+    print("(\(x), \(y)) is on the line x == y")
+case let (x, y) where x == -y:
+    print("(\(x), \(y)) is on the line x == -y")
+case let (x, y):
+    print("(\(x), \(y)) is just some arbitrary point")
+}
+// Prints "(1, -1) is on the line x == -y"
+```
+
+#### 复合 case
+
+```swift
+let someCharacter: Character = "e"
+switch someCharacter {
+case "a", "e", "i", "o", "u":
+    print("\(someCharacter) is a vowel")
+case "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
+     "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z":
+    print("\(someCharacter) is a consonant")
+default:
+    print("\(someCharacter) isn't a vowel or a consonant")
+}
+// Prints "e is a vowel"
+
+
+let stillAnotherPoint = (9, 0)
+switch stillAnotherPoint {
+case (let distance, 0), (0, let distance):
+    print("On an axis, \(distance) from the origin")
+default:
+    print("Not on an axis")
+}
+// Prints "On an axis, 9 from the origin"
+```
+
+
+
+## 控制转移语句
+
+### continue
+
+在循环语句中使用`continue`语句时，会立即跳出本次循环，并**继续执行**后续循环：
+
+```swift
+let puzzleInput = "great minds think alike"
+var puzzleOutput = ""
+let charactersToRemove: [Character] = ["a", "e", "i", "o", "u", " "]
+for character in puzzleInput {
+    if charactersToRemove.contains(character) {
+        continue
+    }
+    puzzleOutput.append(character)
+}
+print(puzzleOutput)
+// Prints "grtmndsthnklk"
+```
+
+### break
+
+在循环语句中使用`break`语句时，会立即跳出本次循环，并且**不再执行**后续循环。
+
+
+
+在`switch-case`语句中使用`break`语句时，会立即结束执行`switch-case`语句：
+
+```swift
+let numberSymbol: Character = "三"  // Chinese symbol for the number 3
+var possibleIntegerValue: Int?
+switch numberSymbol {
+case "1", "١", "一", "๑":
+    possibleIntegerValue = 1
+case "2", "٢", "二", "๒":
+    possibleIntegerValue = 2
+case "3", "٣", "三", "๓":
+    possibleIntegerValue = 3
+case "4", "٤", "四", "๔":
+    possibleIntegerValue = 4
+default:
+    break
+}
+if let integerValue = possibleIntegerValue {
+    print("The integer value of \(numberSymbol) is \(integerValue).")
+} else {
+    print("An integer value couldn't be found for \(numberSymbol).")
+}
+// Prints "The integer value of 三 is 3."
+```
+
+
+
+### fallthrough
+
+`swift-case`语句的某个`case`语句执行完毕后，就不会再执行下一个`case`或者`default`语句了。如果想要某个`case`语句执行完毕后继续执行下一个`case`或者`default`语句中的代码，则可以在该`case`语句中使用`Fallthrough`语句，**该语句会使代码执行直接移动到下一个`case`语句中的代码，而不会去判断下一个`case`或者`default`语句的条件是否为真**：
+
+```swift
+let integerToDescribe = 5
+var description = "The number \(integerToDescribe) is"
+switch integerToDescribe {
+case 2, 3, 5, 7, 11, 13, 17, 19:
+    description += " a prime number, and also"
+    fallthrough
+default:
+    description += " an integer."
+}
+print(description)
+// Prints "The number 5 is a prime number, and also an integer."
+```
+
+
+
+### 标签
+
+在某个循环内部嵌套使用`switch-case`语句或者其他循环时，为了明确`continue`或者`break`语句的作用对象，可以使用标签来标记循环（如果没有使用标签标记循环，则默认作用对象为`continue`或者`break`语句所在的这层循环）：
+
+```swift
+loopA: for i in 2...6 {
+            
+	print("loop A --- \(i)")
+            
+	loopB: for j in 1...7 {
+    
+    print("loop B --- \(j)")
+    
+		if j == 2 {
+                    
+			break loopA
+		}
+	}
+}
+```
+
+
+
+### guard
+
+`guard`语句与`if`语句类似，但`guard`语句要求条件必须为真，以便执行`guard`语句之后的代码。与`if`语句不同的是，`guard`语句总是包含一个`else`子句。如果`guard`语句的条件为假，则会执行`else`子句中的代码。
+
+```swift
+func greet(person: [String: String]) {
+    guard let name = person["name"] else {
+        return
+    }
+
+    print("Hello \(name)!")
+
+    guard let location = person["location"] else {
+        print("I hope the weather is nice near you.")
+        return
+    }
+
+    print("I hope the weather is nice in \(location).")
+}
+
+greet(person: ["name": "John"])
+// Prints "Hello John!"
+// Prints "I hope the weather is nice near you."
+greet(person: ["name": "Jane", "location": "Cupertino"])
+// Prints "Hello Jane!"
+// Prints "I hope the weather is nice in Cupertino."
+```
+
+与使用`if`语句进行相同的检查相比，使用`guard`语句可以提高代码的可读性。
+
+
+
+## 检查 API 可用性
+
+```swift
+if #available(iOS 10, macOS 10.12, *) {
+    // Use iOS 10 APIs on iOS, and use macOS 10.12 APIs on macOS
+} else {
+    // Fall back to earlier iOS and macOS APIs
+}
+```
+
+
+
+
+
+# 函数
+
+
+
+## 定义和调用函数
+
+定义函数时，需要使用`func`关键字作为前缀，后面是函数名，函数名后面是`()`，`()`号内包含函数的参数，`()`号是`->`，`->`后面是返回值类型。在以下代码中，`greet`是函数名，`person`是参数名称，`:`后面是参数类型：
+
+```swift
+func greet(person: String) -> String {
+    let greeting = "Hello, " + person + "!"
+    return greeting
+}
+```
+
+调用函数：
+
+```swift
+greet(person: "Anna")
+```
+
+在以上代码中，`greet`是函数名称，`person`是参数标签（未显式指定参数的标签时，默认使用参数的名称作为起标签）。
+
+
+
+### 没有参数的函数
+
+```swift
+func sayHelloWorld() -> String {
+    return "hello, world"
+}
+print(sayHelloWorld())
+// Prints "hello, world"
+```
+
+
+
+### 具有多个参数的函数
+
+```swift
+func greet(person: String, alreadyGreeted: Bool) -> String {
+    if alreadyGreeted {
+        return greetAgain(person: person)
+    } else {
+        return greet(person: person)
+    }
+}
+print(greet(person: "Tim", alreadyGreeted: true))
+// Prints "Hello again, Tim!"
+```
+
+
+
+### 没有返回值的函数
+
+```swift
+func greet(person: String) {
+    print("Hello, \(person)!")
+}
+greet(person: "Dave")
+// Prints "Hello, Dave!"
+```
+
+
+
+### 具有多个返回值的函数
+
+可以使用元组作为函数的返回值类型，以便将多个返回值作为一个复合值返回。
+
+```swift
+func minMax(array: [Int]) -> (min: Int, max: Int) {
+    var currentMin = array[0]
+    var currentMax = array[0]
+    for value in array[1..<array.count] {
+        if value < currentMin {
+            currentMin = value
+        } else if value > currentMax {
+            currentMax = value
+        }
+    }
+    return (currentMin, currentMax)
+}
+
+```
+
+### 返回值为可选类型的函数
+
+```swift
+func minMax(array: [Int]) -> (min: Int, max: Int)? {
+    if array.isEmpty { return nil }
+    var currentMin = array[0]
+    var currentMax = array[0]
+    for value in array[1..<array.count] {
+        if value < currentMin {
+            currentMin = value
+        } else if value > currentMax {
+            currentMax = value
+        }
+    }
+    return (currentMin, currentMax)
+}
+```
+
+
+
+## 函数参数标签和参数名称
+
+每个函数参数都有**参数标签**和**参数名称**，调用函数时使用**参数标签**，每个参数都写在函数调用中，前面有**参数标签**。**参数名称**用于函数的实现。**默认情况下，参数使用其参数名称作为参数标签。**
+
+
+
+### 指定参数标签
+
+```swift
+func greet(person: String, from hometown: String) -> String {
+    return "Hello \(person)!  Glad you could visit from \(hometown)."
+}
+print(greet(person: "Bill", from: "Cupertino"))
+// Prints "Hello Bill!  Glad you could visit from Cupertino."
+```
+
+
+
+### 省略参数标签
+
+如果不想要参数的参数标签，则可以在参数名称之前使用`_`来代替参数标签：
+
+```swift
+func someFunction(_ firstParameterName: Int, secondParameterName: Int) {
+    // In the function body, firstParameterName and secondParameterName
+    // refer to the argument values for the first and second parameters.
+}
+someFunction(1, secondParameterName: 2)
+```
+
+
+
+### 默认参数值
+
+可以通过在参数类型后为参数分配值来为函数中的任何参数定义*默认值*。如果定义了默认值，则可以在调用函数时省略该参数。
+
+```swift
+func someFunction(parameterWithoutDefault: Int, parameterWithDefault: Int = 12) {
+    // If you omit the second argument when calling this function, then
+    // the value of parameterWithDefault is 12 inside the function body.
+}
+someFunction(parameterWithoutDefault: 3, parameterWithDefault: 6) // parameterWithDefault is 6
+someFunction(parameterWithoutDefault: 4) // parameterWithDefault is 12
+```
+
+
+
+### 可变参数
+
+可以使用可变参数来指定调用函数时可以传递不同数量的输入值，通过在参数的类型后加上`...`来编写可变参数：
+
+```swift
+func arithmeticMean(_ numbers: Double...) -> Double {
+    var total: Double = 0
+    for number in numbers {
+        total += number
+    }
+    return total / Double(numbers.count)
+}
+arithmeticMean(1, 2, 3, 4, 5)
+// returns 3.0, which is the arithmetic mean of these five numbers
+arithmeticMean(3, 8.25, 18.75)
+// returns 10.0, which is the arithmetic mean of these three numbers
+```
+
+**在可变参数之后的第一个其他参数必须具有参数标签。**
+
+
+
+### 输入输出参数
+
+函数的参数默认为常量，在函数主体内更改函数参数的值会导致编译时错误。如果想要在函数主体内修改参数的值，并且希望这些更改在函数调用结束后持续存在，则可以将参数定义为**输入输出参数**。通过在参数类型之前加上`inout`关键字来编写一个输入输出参数：
+
+```swift
+func swapTwoInts(_ a: inout Int, _ b: inout Int) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+
+var someInt = 3
+var anotherInt = 107
+swapTwoInts(&someInt, &anotherInt)
+print("someInt is now \(someInt), and anotherInt is now \(anotherInt)")
+// Prints "someInt is now 107, and anotherInt is now 3"
+```
+
+**注意：输入输出参数不能设置默认值。**
+
+
+
+## 函数类型
+
+每个函数都有特定的函数类型，由函数的参数类型和返回值类型组成。
+
+```swift
+func addTwoInts(_ a: Int, _ b: Int) -> Int {
+    return a + b
+}
+func multiplyTwoInts(_ a: Int, _ b: Int) -> Int {
+    return a * b
+}
+```
+
+以上代码中两个函数的类型都是`(Int, Int) -> Int`。
+
+
+
+### 使用函数类型
+
+可以将常量或者变量定义为函数类型：
+
+```swift
+var mathFunction: (Int, Int) -> Int = addTwoInts
+```
+
+然后就可以调用名为`mathFunction`的函数了：
+
+```swift
+print("Result: \(mathFunction(2, 3))")
+// Prints "Result: 5"
+
+mathFunction = multiplyTwoInts
+print("Result: \(mathFunction(2, 3))")
+// Prints "Result: 6"
+```
+
+与任何其他类型一样，将函数分配给常量或者变量时，swift 会自动推断函数类型：
+
+```swift
+let anotherMathFunction = addTwoInts
+// anotherMathFunction is inferred to be of type (Int, Int) -> Int
+```
+
+
+
+### 函数类型作为函数的参数类型
+
+```swift
+func printMathResult(_ mathFunction: (Int, Int) -> Int, _ a: Int, _ b: Int) {
+    print("Result: \(mathFunction(a, b))")
+}
+printMathResult(addTwoInts, 3, 5)
+// Prints "Result: 8"
+```
+
+
+
+### 函数类型作为函数的返回值类型
+
+```swift
+func stepForward(_ input: Int) -> Int {
+    return input + 1
+}
+func stepBackward(_ input: Int) -> Int {
+    return input - 1
+}
+
+func chooseStepFunction(backward: Bool) -> (Int) -> Int {
+    return backward ? stepBackward : stepForward
+}
+
+var currentValue = 3
+let moveNearerToZero = chooseStepFunction(backward: currentValue > 0)
+// moveNearerToZero now refers to the stepBackward() function
+
+print("Counting to zero:")
+// Counting to zero:
+while currentValue != 0 {
+    print("\(currentValue)... ")
+    currentValue = moveNearerToZero(currentValue)
+}
+print("zero!")
+// 3...
+// 2...
+// 1...
+// zero!
+```
+
+
+
+## 嵌套函数
+
+除了可以定义全局函数之外，Swift 还支持在函数的主体内定义其他函数，称为嵌套函数。
+
+```swift
+func chooseStepFunction(backward: Bool) -> (Int) -> Int {
+    func stepForward(input: Int) -> Int { return input + 1 }
+    func stepBackward(input: Int) -> Int { return input - 1 }
+    return backward ? stepBackward : stepForward
+}
+var currentValue = -4
+let moveNearerToZero = chooseStepFunction(backward: currentValue > 0)
+// moveNearerToZero now refers to the nested stepForward() function
+while currentValue != 0 {
+    print("\(currentValue)... ")
+    currentValue = moveNearerToZero(currentValue)
+}
+print("zero!")
+// -4...
+// -3...
+// -2...
+// -1...
+// zero!
+```
+
+
+
+# 闭包
+
+闭包（closure）是自包含的函数块，可以在代码中传递和使用。Swift 中的闭包类似于 C 和 Objective-C 中的 block。
+
+
+
+**全局函数和嵌套函数是实际上是闭包的特例。**闭包有以下三种形式：
+
+- 全局函数是具有名称且不捕获任何值的闭包。
+- 嵌套函数是具有名称的闭包，可以从其封闭函数中捕获值。
+- 闭包表达式是用轻量级语法编写的未命名闭包，可以从周围的上下文中捕获值。
+
+
+
+## 闭包表达式
+
+调用`Array`对象的`sorted(by:)`函数时，需要向该函数传递一个闭包，这个闭包具有两个与数组存储类型一致的参数，并返回一个`Bool`值，这个`Bool`值用来说明在排序时给定的第一个参数值是排在给定的第二个参数值之前（`true`）还是之后（`false`）。由于全局函数是闭包的一种特殊形式，所以可以像下面这样使用`sorted(by:)`函数：
+
+```swift
+let names = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
+
+func backward(_ s1: String, _ s2: String) -> Bool {
+    return s1 > s2
+}
+
+var reversedNames = names.sorted(by: backward)
+// reversedNames is equal to ["Ewa", "Daniella", "Chris", "Barry", "Alex"]
+```
+
+但是上面这种方式比较冗长，为了让代码更加简洁，我们可以使用闭包表达式语法内联编写排序闭包。
+
+
+
+闭包表达式语法有以下一般形式：
+
+​	{ (`parameters`) **->** `return type` **in**
+​    	`statements`
+​	}
+
+
+
+上面例子中的排序闭包可以写成这样：
+
+```swift
+reversedNames = names.sorted(by: { (s1: String, s2: String) -> Bool in
+    return s1 > s2
+})
+```
+
+
+
+### 从上下文推断类型
+
+当将闭包作为一个内联闭包表达式传递给函数或者方法时，Swift 总是可以根据上下文自动推断出闭包的参数类型和返回值类型。因此，上面例子中的排序闭包还可以编写为：
+
+```swift
+reversedNames = names.sorted(by: { s1, s2 in return s1 > s2 } )
+```
+
+
+
+### 单一表达式闭包的隐式返回值
+
+我们可以通过省略**单一表达式**闭包的`return`关键字来隐式返回该闭包主体内的单一表达式的返回值，上面例子中排序闭包的单一表达式`s1>s2`会返回一个`Bool`值，因此还可以编写成以下这样：
+
+```swift
+reversedNames = names.sorted(by: { s1, s2 in s1 > s2 } )
+```
+
+
+
+### 简写参数名称
+
+Swift 会自动为**内联闭包**提供简写的参数名称，我们可以通过名称`$0`、`$1`、`$2`...来引用内联闭包`第一个`、`第二个`、`第三个`...参数的值。如果我们在内联闭包表达式的主体内使用了这些简写参数名称，则我们可以省略内联闭包表达式中的参数列表，`in`关键字也可以省略：
+
+```swift
+reversedNames = names.sorted(by: { $0 > $1 } )
+```
+
+
+
+### 运算符方法
+
+以上例子中的内联闭包表达式还有一种更简单的编写方式：
+
+```swift
+reversedNames = names.sorted(by: >)
+```
+
+
+
+## 尾随闭包
+
+当需要将闭包表达式传递给函数作为函数的最终参数，并且闭包表达式很长，那么将其编写为**尾随闭包**是非常有用地。
+
+```swift
+func someFunctionThatTakesAClosure(closure: () -> Void) {
+    // function body goes here
+}
+
+// 使用闭包调用函数
+
+someFunctionThatTakesAClosure(closure: {
+    // closure's body goes here
+})
+
+// 使用尾随闭包调用函数
+
+someFunctionThatTakesAClosure() {
+    // trailing closure's body goes here
+}
+```
+
+
+
+前面例子中的排序函数也可以使用尾随闭包去调用：
+
+```swift
+reversedNames = names.sorted() {(s1: String, s2: String) -> Bool in
+    return s1 > s2
+}
+```
+
+如果闭包是函数或方法的唯一参数，并且使用尾随闭包去调用函数或方法，则在调用函数或者方法时可以省略函数名称后面的一对括号`()`：
+
+```swift
+// 闭包的参数类型和返回值类型被省略了
+reversedNames = names.sorted { $0 > $1 }
+```
+
+
+
+Swift 的`Array`类型有一个`map(_:)`方法，该方法接受一个闭包表达式作为其唯一参数，该方法会为数组对象中的每个元素调用一次传递进来的闭包来返回该元素的映射值。在以下代码中，由于闭包表达式较长，所以使用尾随闭包来调用`map(_:)`方法：
+
+```swift
+let digitNames = [
+    0: "Zero", 1: "One", 2: "Two",   3: "Three", 4: "Four",
+    5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine"
+]
+let numbers = [16, 58, 510]
+
+let strings = numbers.map { (number) -> String in
+    var number = number
+    var output = ""
+    repeat {
+        output = digitNames[number % 10]! + output
+        number /= 10
+    } while number > 0
+    return output
+}
+// strings is inferred to be of type [String]
+// its value is ["OneSix", "FiveEight", "FiveOneZero"]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
