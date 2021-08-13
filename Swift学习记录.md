@@ -2872,7 +2872,7 @@ reversedNames = names.sorted(by: { $0 > $1 } )
 
 ### 运算符方法
 
-以上例子中的内联闭包表达式还有一种更简单的编写方式：
+以上例子中的内联闭包表达式还有一种更简单的编写方式--[自动闭包](#自动闭包)：
 
 ```swift
 reversedNames = names.sorted(by: >)
@@ -2945,15 +2945,341 @@ let strings = numbers.map { (number) -> String in
 
 
 
+如果一个函数需要多个闭包参数，则省略第一个尾随闭包的参数标签，并标记其余的尾随闭包。例如，下面的函数为照片库加载图片：
+
+```swift
+func loadPicture(from server: Server, completion: (Picture) -> Void, onFailure: () -> Void) {
+    if let picture = download("photo.jpg", from: server) {
+        completion(picture)
+    } else {
+        onFailure()
+    }
+}
+// 调用loadPicture函数
+loadPicture(from: someServer) { picture in
+    someView.currentPicture = picture
+} onFailure: {
+    print("Couldn't download the next picture.")
+}
+```
 
 
 
+## 捕获值
+
+闭包可以从周围上下文中捕获常量和变量，在闭包表达式主体内可以引用和修改这些常量和变量的值，即使定义常量和变量的原始作用域已不存在。
 
 
 
+在 Swift 中，可以捕获值的闭包的最简单形式是嵌套函数，嵌套函数可以捕获其外部函数的任何参数，也可以捕获外部函数中定义的任何常量和变量。
+
+```swift
+func makeIncrementer(forIncrement amount: Int) -> () -> Int {
+    var runningTotal = 0
+    func incrementer() -> Int {
+        runningTotal += amount
+        return runningTotal
+    }
+    return incrementer
+}
+
+let incrementByTen = makeIncrementer(forIncrement: 10)
+
+/*
+	此时 makeIncrementer 函数的栈帧已被释放，而 runningTotal 变量已被 incrementByTen 闭包引用
+*/
+
+incrementByTen()
+// returns a value of 10
+incrementByTen()
+// returns a value of 20
+incrementByTen()
+// returns a value of 30
+
+let incrementBySeven = makeIncrementer(forIncrement: 7)
+incrementBySeven()
+// returns a value of 7
+```
 
 
 
+闭包会从周围上下文中捕获对常量和变量的引用，从而确保在定义常量和变量的作用域失效后调用闭包时，常量和变量还未被销毁。
 
 
+
+## 闭包是引用类型
+
+函数和闭包属于引用类型。将函数或闭包分配给常量或变量时，实际上是将常量和变量的指针指向了闭包的内存地址。以下代码中的`alsoIncrementByTen`常量和上面的`incrementByTen`常量引用的是同一个闭包：
+
+```swift
+let alsoIncrementByTen = incrementByTen
+alsoIncrementByTen()
+// returns a value of 50
+
+incrementByTen()
+// returns a value of 60
+```
+
+
+
+## 逃逸闭包
+
+一个闭包被作为参数传递给某个函数，并在该函数返回之后才被执行，Swift 将这种场景称为闭包从函数中逃逸。在声明一个将闭包作为其参数之一的函数时，可以在参数的类型前加上`@escaping`来表示允许闭包从函数中逃逸。
+
+
+
+逃逸闭包多被用来当作函数回调，例如：许多执行异步操作的函数会将闭包参数作为其完成处理程序，函数在开始执行异步操作后返回，但直到异步操作执行完毕后才调用闭包。
+
+
+
+以下代码中，`completionHandlers`变量是一个存放`() -> Void`类型闭包的数组，`someFunctionWithEscapingClosure`函数会将传递进来的闭包添加到`completionHandlers`数组中。如果没有允许传递进来的闭包可以从函数中逃逸的话，编译以下代码时会报错。
+
+```swift
+var completionHandlers: [() -> Void] = []
+func someFunctionWithEscapingClosure(completionHandler: @escaping () -> Void) {
+    completionHandlers.append(completionHandler)
+}
+```
+
+
+
+**引用`self`的逃逸闭包，如果`self`是一个类的实例，则可能会导致循环引用。有关循环引用的更多信息，请参看后面的[自动引用计数](#自动引用计数)章节。**
+
+
+
+**非逃逸闭包可以隐式地引用`self`，而逃逸闭包必须显式地引用`self`。**以下代码中，传递给`someFunctionWithEscapingClosure`函数的闭包**显式**地引用了`self`，而传递给`someFunctionWithNonescapingClosure`函数的闭包**隐式**地引用了`self`。
+
+```swift
+func someFunctionWithNonescapingClosure(closure: () -> Void) {
+    closure()
+}
+
+class SomeClass {
+    // 属性 x
+    var x = 10
+  
+    func doSomething() {
+        someFunctionWithEscapingClosure { self.x = 100 }
+        someFunctionWithNonescapingClosure { x = 200 }
+    }
+}
+
+let instance = SomeClass()
+instance.doSomething()
+print(instance.x)
+// Prints "200"
+
+completionHandlers.first?()
+print(instance.x)
+// Prints "100"
+```
+
+
+
+如果`self`是一个结构体或枚举的实例，则闭包始终可以**隐式**地引用`self`。但是，当`self`是结构体或者枚举的实例时，逃逸闭包无法捕获对`self`的可变引用。如[结构体和枚举是值类型](#结构体和枚举是值类型)章节中所述，结构体和枚举不允许共享可变性。
+
+```swift
+struct SomeStruct {
+    var x = 10
+    mutating func doSomething() {
+        someFunctionWithNonescapingClosure { x = 200 }  // Ok
+        someFunctionWithEscapingClosure { x = 100 }     // Error, 不允许共享可变性
+    }
+}
+```
+
+
+
+## 自动闭包
+
+定义一个具有闭包类型的参数的函数时，如果在闭包类型前加上`@autoclosure`属性来标记参数可以自动转换为闭包，那么我们在使用这个函数时，可以直接将一段代码作为闭包参数传递给这个函数，编译器在编译时会自动为这段代码创建一个闭包。
+
+```swift
+var customersInLine = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
+
+func serve(customer customerProvider: @autoclosure () -> String) {
+    print("Now serving \(customerProvider())!")
+}
+serve(customer: customersInLine.remove(at: 0))
+
+/*
+	可以逃逸的自动闭包
+*/
+// customersInLine is ["Barry", "Daniella"]
+var customerProviders: [() -> String] = []
+func collectCustomerProviders(_ customerProvider: @autoclosure @escaping () -> String) {
+    customerProviders.append(customerProvider)
+}
+collectCustomerProviders(customersInLine.remove(at: 0))
+collectCustomerProviders(customersInLine.remove(at: 0))
+
+print("Collected \(customerProviders.count) closures.")
+// Prints "Collected 2 closures."
+for customerProvider in customerProviders {
+    print("Now serving \(customerProvider())!")
+}
+// Prints "Now serving Barry!"
+// Prints "Now serving Daniella!"
+```
+
+
+
+# 枚举
+
+
+
+## 枚举语法
+
+使用`enum`关键字来定义一个枚举，并使用`case`关键字来引入一个新的枚举案例：
+
+```swift
+enum CompassPoint {
+    case north
+    case south
+    case east
+    case west
+}
+```
+
+多个枚举案例可以出现在同一行上，用逗号隔开：
+
+```swift
+enum Planet {
+    case mercury, venus, earth, mars, jupiter, saturn, uranus, neptune
+}
+```
+
+
+
+定义一个枚举就是定义了一个新的类型，与 Swift 中的其他类型一样，枚举的名字以大写字母开头。
+
+
+
+使用枚举：
+
+```swift
+var directionToHead = CompassPoint.west
+
+// directionToHead的类型已经已知，所以可以省略掉枚举的类型
+directionToHead = .east
+```
+
+
+
+## 将枚举值与 switch-case 语句匹配
+
+```swift
+directionToHead = .south
+switch directionToHead {
+case .north:
+    print("Lots of planets have a north")
+case .south:
+    print("Watch out for penguins")
+case .east:
+    print("Where the sun rises")
+case .west:
+    print("Where the skies are blue")
+}
+// Prints "Watch out for penguins"
+```
+
+
+
+## 迭代枚举案例
+
+当枚举遵循`CaseIterable`协议时，可以使用枚举的`allCases`属性来迭代枚举案例。
+
+```swift
+enum Beverage: CaseIterable {
+    case coffee, tea, juice
+}
+let numberOfChoices = Beverage.allCases.count
+print("\(numberOfChoices) beverages available")
+// Prints "3 beverages available"
+
+for beverage in Beverage.allCases {
+    print(beverage)
+}
+// coffee
+// tea
+// juice
+```
+
+
+
+## 关联值
+
+枚举的案例还可以关联一个其他类型的值，这种枚举被称为 discriminated union 或 tagged union。
+
+
+
+例如，假设库存跟踪系统需要通过两种不同类型的条形码来跟踪产品，一部分产品使用了 UPC 格式的 1D 条形码（每个竖线条代表`0`到`9`之间的某个数字）来标记，还有一部分产品使用了二维码格式的 2D 条形码（使用若干个与二进制相对应的几何形体来表示任何 ISO 8859-1 字符）来标记。库存跟踪系统将 UPC 条形码存储为包含4个`Int`类型的元组，将二维码条形码存储为任意长度的字符串。
+
+![UPC格式条形码](https://docs.swift.org/swift-book/_images/barcode_UPC_2x.png)
+
+![二维码格式条形码](https://docs.swift.org/swift-book/_images/barcode_QR_2x.png)
+
+在 Swift 中，我们可以为上面的例子定义一个产品条形码的枚举：
+
+```swift
+enum Barcode {
+    case upc(Int, Int, Int, Int)
+    case qrCode(String)
+}
+```
+
+我们可以为某个产品创建一个新的条形码，并设置不同格式的条形码：
+
+```swift
+var productBarcode = Barcode.upc(8, 85909, 51226, 3)
+
+productBarcode = .qrCode("ABCDEFGHIJKLMNOP")
+```
+
+使用`switch-case`语句检查条形码类型并提取关联值：
+
+```swift
+switch productBarcode {
+case .upc(let numberSystem, let manufacturer, let product, let check):
+    print("UPC: \(numberSystem), \(manufacturer), \(product), \(check).")
+case .qrCode(let productCode):
+    print("QR code: \(productCode).")
+}
+// Prints "QR code: ABCDEFGHIJKLMNOP."
+
+/*
+	如果所有关联值都统一被提取为常量或者变量，则可以直接在案例前加上`let`或者`var`关键字，而不用逐个显式声明
+*/
+switch productBarcode {
+case let .upc(numberSystem, manufacturer, product, check):
+    print("UPC : \(numberSystem), \(manufacturer), \(product), \(check).")
+case let .qrCode(productCode):
+    print("QR code: \(productCode).")
+}
+// Prints "QR code: ABCDEFGHIJKLMNOP."
+```
+
+
+
+## 原始值
+
+枚举的案例还可以手动设置默认值（称为原始值），这些值都是**同一**类型的。
+
+
+
+以下是一个将案例的原始值设置为原始 ASCII 值的枚举：
+
+```swift
+enum ASCIIControlCharacter: Character {
+    case tab = "\t"
+    case lineFeed = "\n"
+    case carriageReturn = "\r"
+}
+```
+
+原始值可以是字符串、字符或者任何整数或浮点数类型，每个原始值在其枚举声明中必须是唯一的。
+
+
+
+### 隐式分配原始值
 
